@@ -5,27 +5,36 @@ public class NPCHealth : MonoBehaviour
 {
     [SerializeField] private NPCStatsConfig statsConfig;
 
-    // Приватное поле (изменяемое)
+    // Приватные поля (изменяемые локально для этого конкретного NPC)
     private float currentHealth;
+    private float currentMaxHealth;
+    private float currentArmor;
 
     // Публичное свойство только на чтение
     public float CurrentHealth => currentHealth;
 
-    // Публичное свойство для чтения максимума из SO
-    public float MaxHealth => statsConfig.MaxHealth;
+    // Публичные свойства для чтения локальных копий
+    public float MaxHealth => currentMaxHealth;
+    public float Armor => currentArmor;
 
     public event Action<float, float> OnHealthChanged;
 
     private void Start()
     {
-        currentHealth = statsConfig.MaxHealth;
+        // При старте копируем базовые значения из ScriptableObject
+        // Теперь каждый NPC хранит свои собственные копии
+        currentMaxHealth = statsConfig.MaxHealth;
+        currentArmor = statsConfig.Armor;
+
+        currentHealth = currentMaxHealth;
         OnHealthChanged?.Invoke(currentHealth, MaxHealth);
     }
 
     // Метод (бизнес-логика)
     public void DecreaseHealth(float damageAmount)
     {
-        var finalDamage = Mathf.Max(0, damageAmount - statsConfig.Armor);
+        // Считаем урон, используя локальную копию брони (currentArmor)
+        var finalDamage = Mathf.Max(0, damageAmount - currentArmor);
         currentHealth = Mathf.Max(0, currentHealth - finalDamage);
 
         OnHealthChanged?.Invoke(currentHealth, MaxHealth);
